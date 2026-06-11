@@ -1,0 +1,33 @@
+name: Generate Solar Watch Face
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # midnight CST = 6:00 AM UTC
+  workflow_dispatch:      # allows manual trigger from GitHub UI
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate image
+        run: python planet_orbits.py
+
+      - name: Commit and push output.png
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add output.png
+          git diff --cached --quiet || git commit -m "Update watch face $(date -u '+%Y-%m-%d')"
+          git push
