@@ -33,7 +33,7 @@ EPHEM_BODIES = {
 
 # --- Star configuration ---
 STAR_TARGET_DATE  = datetime(2026, 7, 7, tzinfo=CST)
-#STAR_TARGET_DATE  = datetime(2026, 6, 10, 2, 50, tzinfo=CST)
+STAR_TARGET_DATE  = datetime(2026, 6, 10, 2, 50, tzinfo=CST)
 
 STAR_PLANET       = "Earth"
 STAR_SCALE        = 0.45
