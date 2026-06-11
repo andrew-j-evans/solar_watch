@@ -100,7 +100,12 @@ def place_planets(background_path, planets, planet_scale, output_path, dt=None):
     # --- Calculate star position (don't paste yet) ---
     star_angle    = get_star_angle(star_target, STAR_PLANET)
     earth_radius  = next(p["radius"] for p in planets if p["name"] == STAR_PLANET) + 4
-    star_img      = Image.open("Images/Star.png").convert("RGBA")
+    
+    if dt.day == 7:
+        star_img = Image.open("Images/Star_yellow.png").convert("RGBA")
+    else:
+        star_img = Image.open("Images/Star.png").convert("RGBA")
+
     sw = int(star_img.width  * STAR_SCALE)
     sh = int(star_img.height * STAR_SCALE)
     star_img      = star_img.resize((sw, sh), Image.LANCZOS)
