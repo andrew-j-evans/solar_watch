@@ -11,6 +11,8 @@ PLANET_SCALE = 0.15
 
 CST = timezone(timedelta(hours=-5))
 
+SHOW_TRIANGLE = False  # toggle the triangle on/off
+
 PLANETS = [
     {"name": "Sun",      "radius": 0,   "scale": 0.36},
     {"name": "Mercury",  "radius": 70,  "scale": 0.19},
@@ -32,12 +34,21 @@ EPHEM_BODIES = {
 }
 
 # --- Star configuration ---
-STAR_TARGET_DATE  = datetime(2026, 7, 7, tzinfo=CST)
-STAR_TARGET_DATE  = datetime(2026, 6, 10, 2, 50, tzinfo=CST)
+STAR_PLANET          = "Earth"
+STAR_SCALE           = 0.45
+STAR_ROTATION_OFFSET = 180
 
-STAR_PLANET       = "Earth"
-STAR_SCALE        = 0.45
-STAR_ROTATION_OFFSET = 180  # extra degrees on top of pointing inward (tweak this)
+
+def get_next_seventh(dt):
+    """Returns the next 7th of a month from the given date (CST)."""
+    # If today is before the 7th, use this month's 7th
+    if dt.day < 7:
+        return dt.replace(day=7, hour=0, minute=0, second=0, microsecond=0)
+    # Otherwise use next month's 7th
+    if dt.month == 12:
+        return dt.replace(year=dt.year + 1, month=1, day=7, hour=0, minute=0, second=0, microsecond=0)
+    else:
+        return dt.replace(month=dt.month + 1, day=7, hour=0, minute=0, second=0, microsecond=0)
 
 
 def get_planet_angle(name, dt=None):
@@ -47,7 +58,6 @@ def get_planet_angle(name, dt=None):
     if name == "Triangle":
         if dt is None:
             dt = datetime.now(CST)
-            print(dt)
         hours = dt.hour + dt.minute / 60.0
         return (270 + hours * 15) % 360
 
@@ -73,7 +83,6 @@ def get_star_angle(target_date, planet=STAR_PLANET):
 
 
 def get_inward_rotation(angle, offset=0):
-    """Points image toward center, plus an optional fixed offset in degrees."""
     return -(angle - 90) + offset
 
 
@@ -81,28 +90,33 @@ def place_planets(background_path, planets, planet_scale, output_path, dt=None):
     if dt is None:
         dt = datetime.now(CST)
 
+    star_target = get_next_seventh(dt)
     print(f"Rendering positions for: {dt.strftime('%Y-%m-%d %H:%M CST')}")
+    print(f"Star target date: {star_target.strftime('%Y-%m-%d')} (next 7th)")
 
     bg = Image.open(background_path).convert("RGBA")
     cx, cy = bg.width // 2, bg.height // 2
 
     # --- Calculate star position (don't paste yet) ---
-    star_angle   = get_star_angle(STAR_TARGET_DATE, STAR_PLANET)
-    earth_radius = next(p["radius"] for p in planets if p["name"] == STAR_PLANET) + 4
-    star_img     = Image.open("Images/Star.png").convert("RGBA")
+    star_angle    = get_star_angle(star_target, STAR_PLANET)
+    earth_radius  = next(p["radius"] for p in planets if p["name"] == STAR_PLANET) + 4
+    star_img      = Image.open("Images/Star.png").convert("RGBA")
     sw = int(star_img.width  * STAR_SCALE)
     sh = int(star_img.height * STAR_SCALE)
-    star_img     = star_img.resize((sw, sh), Image.LANCZOS)
+    star_img      = star_img.resize((sw, sh), Image.LANCZOS)
     star_rotation = get_inward_rotation(star_angle, offset=STAR_ROTATION_OFFSET)
-    star_img     = star_img.rotate(star_rotation, resample=Image.BICUBIC, expand=True)
-    sw, sh       = star_img.size
-    star_rad     = math.radians(star_angle)
+    star_img      = star_img.rotate(star_rotation, resample=Image.BICUBIC, expand=True)
+    sw, sh        = star_img.size
+    star_rad      = math.radians(star_angle)
     sx = int(cx + earth_radius * math.cos(star_rad) - sw / 2)
     sy = int(cy + earth_radius * math.sin(star_rad) - sh / 2)
     print(f"  {'Star':8s} angle={star_angle:6.1f}°  rotation={star_rotation:.1f}°  pos=({sx}, {sy})")
 
     # --- Place planets ---
     for p in planets:
+        if p["name"] == "Triangle" and not SHOW_TRIANGLE:
+            continue
+
         img = Image.open(f"Images/{p['name']}.png").convert("RGBA")
 
         scale = p.get("scale", planet_scale)
