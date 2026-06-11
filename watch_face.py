@@ -42,7 +42,7 @@ STAR_ROTATION_OFFSET = 180
 def get_next_seventh(dt):
     """Returns the next 7th of a month from the given date (CST)."""
     # If today is before the 7th, use this month's 7th
-    if dt.day < 7:
+    if dt.day <= 7:
         return dt.replace(day=7, hour=0, minute=0, second=0, microsecond=0)
     # Otherwise use next month's 7th
     if dt.month == 12:
