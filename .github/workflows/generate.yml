@@ -22,7 +22,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Generate image
-        run: python planet_orbits.py
+        run: python watch_face.py
 
       - name: Commit and push output.png
         run: |
